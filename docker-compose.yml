@@ -1,0 +1,44 @@
+services:
+  couchdb:
+    image: couchdb:3.3
+    container_name: obsidian-couchdb
+    restart: unless-stopped
+    environment:
+      COUCHDB_USER: ${COUCHDB_USER}
+      COUCHDB_PASSWORD: ${COUCHDB_PASSWORD}
+    volumes:
+      - ./couchdb/data:/opt/couchdb/data
+      - ./couchdb/local.ini:/opt/couchdb/etc/local.d/local.ini:ro
+    ports:
+      # Публикуем только на localhost, наружу торчит через host nginx (443)
+      - "127.0.0.1:5984:5984"
+    networks:
+      - obsidian-net
+
+  # Одноразовый контейнер: создаёт системные БД (_users, _replicator, _global_changes),
+  # без которых Obsidian LiveSync / Fauxton работают некорректно.
+  couchdb-init:
+    image: curlimages/curl:latest
+    container_name: obsidian-couchdb-init
+    depends_on:
+      - couchdb
+    networks:
+      - obsidian-net
+    environment:
+      COUCHDB_USER: ${COUCHDB_USER}
+      COUCHDB_PASSWORD: ${COUCHDB_PASSWORD}
+    entrypoint: >
+      sh -c "
+        echo 'Waiting for CouchDB...';
+        until curl -s http://couchdb:5984/ > /dev/null; do sleep 2; done;
+        echo 'Creating system databases...';
+        curl -s -u \"$$COUCHDB_USER:$$COUCHDB_PASSWORD\" -X PUT http://couchdb:5984/_users;
+        curl -s -u \"$$COUCHDB_USER:$$COUCHDB_PASSWORD\" -X PUT http://couchdb:5984/_replicator;
+        curl -s -u \"$$COUCHDB_USER:$$COUCHDB_PASSWORD\" -X PUT http://couchdb:5984/_global_changes;
+        echo 'Done.';
+      "
+    restart: "no"
+
+networks:
+  obsidian-net:
+    driver: bridge
