@@ -8,7 +8,7 @@ services:
       COUCHDB_PASSWORD: ${COUCHDB_PASSWORD}
     volumes:
       - ./couchdb/data:/opt/couchdb/data
-      - ./couchdb/local.ini:/opt/couchdb/etc/local.d/local.ini:ro
+      - ./couchdb/local.ini:/opt/couchdb/etc/local.d/local.ini
     ports:
       # Публикуем только на localhost, наружу торчит через host nginx (443)
       - "127.0.0.1:5984:5984"
