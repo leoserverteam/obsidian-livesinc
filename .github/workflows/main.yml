@@ -19,6 +19,7 @@ jobs:
     uses: leoserverteam/DevOpsTemplates/.github/workflows/onlycompose.yml@main
     with:
       project_name: "${{ github.event.repository.name }}"
+      extra_files: "couchdb" 
 
   call-nginx:
     needs: [call-deploy]
